@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>测试</title>
+    <style>
+        .table{width:90%;margin-top:20px;border:solid 1px gray}
+    </style>
+</head>
+<body>
+  <table class="table"  border="1" cellspacing="0">
+      <thead>
+      <tr>
+          <th>流程节点</th>
+          <th>状态</th>
+          <th>Value</th>
+          <th>错误信息</th>
+      </tr>
+      </thead>
+      {{ range .tasks }}
+       <tr>
+           <td>
+               {{ .Path }}
+           </td>
+           <td>
+               {{ .State }}
+           </td>
+           <td>
+               {{ .Value }}
+           </td>
+           <td>
+               {{ .Err }}
+           </td>
+       </tr>
+      {{ end }}
+
+  </table>
+
+      <table style="width:100%;margin: 20px auto;">
+          <tr>
+              <td>
+                  <form method="post" action="/run">
+                      <button>执行工作流</button>
+                  </form>
+                  <form method="get" action="/reset">
+                      <button>重置</button>
+                  </form>
+                  <form method="get" action="/cancel">
+                      <button>取消</button>
+                  </form>
+              </td>
+          </tr>
+      </table>
+
+</body>
+</html>
