@@ -1,1 +1,1 @@
-module: "jtthink.com/pro"
+module: "github.com/workflow"

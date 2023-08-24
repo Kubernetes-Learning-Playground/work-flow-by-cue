@@ -12,7 +12,7 @@ import (
 	"log"
 )
 
-//全局变量
+// 全局变量
 var (
 	K8sInformerFactory informers.SharedInformerFactory
 	K8sRestMapper      *meta.RESTMapper
@@ -26,9 +26,8 @@ func init() {
 
 type K8sConfig struct{}
 
-//本课程来自 程 序员在囧途(www.jtthink.com) 咨询群：98514334
 
-//直接初始化
+// 直接初始化
 func NewK8sConfig() *K8sConfig {
 	cfg := &K8sConfig{}
 	//K8sInformerFactory = cfg.initWatch()
@@ -48,7 +47,7 @@ func (*K8sConfig) K8sRestConfig() *rest.Config {
 	return config
 }
 
-//初始化 动态客户端  ++  新增的函数
+// 初始化 动态客户端  ++  新增的函数
 func (this *K8sConfig) InitDynamicClient() dynamic.Interface {
 	client, err := dynamic.NewForConfig(this.K8sRestConfig())
 	if err != nil {
@@ -57,7 +56,7 @@ func (this *K8sConfig) InitDynamicClient() dynamic.Interface {
 	return client
 }
 
-//获取  所有api groupresource
+// 获取  所有api groupresource
 // 这个要 缓存起来。 不然反复从k8s api获取会比较慢
 func (this *K8sConfig) RestMapper() *meta.RESTMapper {
 	gr, err := restmapper.GetAPIGroupResources(this.InitClient().Discovery())
@@ -68,7 +67,7 @@ func (this *K8sConfig) RestMapper() *meta.RESTMapper {
 	return &mapper
 }
 
-//初始化client-go客户端
+// 初始化client-go客户端
 func (cfg *K8sConfig) InitClient() *kubernetes.Clientset {
 	c, err := kubernetes.NewForConfig(cfg.K8sRestConfig())
 	if err != nil {

@@ -30,7 +30,7 @@ func init() {
 
 }
 
-//打印 对象 返回table
+// 打印 对象 返回table
 func PrintObject(obj *unstructured.Unstructured) *metav1.Table {
 	if f, ok := PrinterMap[obj.GroupVersionKind()]; ok {
 		return f(obj)
@@ -38,7 +38,7 @@ func PrintObject(obj *unstructured.Unstructured) *metav1.Table {
 	return defaultTable(obj)
 }
 
-//课程来自 程序员在囧途(www.jtthink.com) 咨询群：985 14334
+// 课程来自 程序员在囧途(www.jtthink.com) 咨询群：985 14334
 // 对于没有注册实现的  显示默认的  只有名称、创建时间什么的
 func defaultTable(obj *unstructured.Unstructured) *metav1.Table {
 	defaultColumns := []metav1.TableColumnDefinition{
@@ -56,7 +56,6 @@ func defaultTable(obj *unstructured.Unstructured) *metav1.Table {
 	return t
 }
 
-//课程来自 程序员在囧途(www.jtthink.com) 咨询群：985 14334
 func _hidden() {
 
 	//podColumnDefinitions := []metav1.TableColumnDefinition{
@@ -121,7 +120,6 @@ func layoutContainerCells(containers []apiv1.Container) (names string, images st
 	return namesBuffer.String(), imagesBuffer.String()
 }
 
-//本课程来自 程序员在囧途(www.jtthink.com) 咨询 群：98514334
 func PrintDeployment(obj *unstructured.Unstructured) *metav1.Table {
 	deploy := &appv1.Deployment{}
 	err := runtime.DefaultUnstructuredConverter.
@@ -155,7 +153,6 @@ func PrintDeployment(obj *unstructured.Unstructured) *metav1.Table {
 	return t
 }
 
-//本课程 来自 程序 员在囧途(www.jtthink.com) 咨询群：98514334
 func printDeployment(obj *appv1.Deployment) ([]metav1.TableRow, error) {
 	row := metav1.TableRow{
 		Object: runtime.RawExtension{Object: obj}, //这一步有待商榷， 是否一定要把对象返回出去。暂时先返回 。后台无所谓的带宽性能

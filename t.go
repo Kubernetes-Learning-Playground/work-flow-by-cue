@@ -63,7 +63,7 @@ func main() {
 		c.Redirect(302, "/")
 	})
 
-	r.Run(":8085")
+	r.Run(":8088")
 }
 
 func regFlowFunc(v cue.Value) (flow.Runner, error) {

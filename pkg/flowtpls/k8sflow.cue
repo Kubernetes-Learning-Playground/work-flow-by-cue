@@ -1,8 +1,9 @@
 package flowtpls
 import (
-	  "jtthink.com/pro/yamls"
+   "github.com/workflow/yamls"
 )
 workflow: {
-			step1: yamls.deployment
-			step2: yamls.service
+   step1: yamls.task_svc
+   step3: yamls.task_bash
+   step2: yamls.task_deploy
 }

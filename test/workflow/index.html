@@ -2,12 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>测试</title>
+    <title>工作流dashboard</title>
     <style>
         .table{width:90%;margin-top:20px;border:solid 1px gray}
     </style>
 </head>
 <body>
+{{ range  $name, $flow := .flows}}
+ <div style="font-weight: bold;color: #b10640">
+     <span> 描述:</span>  <span>{{ $flow.Desc }}</span>
+     <span>状态:</span>  <span>{{ $flow.Status }}</span>
+     <span>成功:</span> <span>{{ $flow.Successed }}</span>
+     <span>失败:</span> <span>{{ $flow.Failed }}</span>
+ </div>
   <table class="table"  border="1" cellspacing="0">
       <thead>
       <tr>
@@ -17,7 +24,7 @@
           <th>错误信息</th>
       </tr>
       </thead>
-      {{ range .tasks }}
+      {{ range $flow.GetFlow.Tasks }}
        <tr>
            <td>
                {{ .Path }}
@@ -33,24 +40,26 @@
            </td>
        </tr>
       {{ end }}
-
   </table>
 
       <table style="width:100%;margin: 20px auto;">
+
           <tr>
               <td>
-                  <form method="post" action="/run">
-                      <button>执行工作流</button>
+                  <form method="post" action="/start/{{$name}}">
+                      填入参数(如果有的话):
+                      <label>
+                          <textarea rows="4"  style="width: 200px;" name="params"></textarea>
+                      </label>
+                      <input type="submit" value="执行工作流"/>
+
                   </form>
-                  <form method="get" action="/reset">
-                      <button>重置</button>
-                  </form>
-                  <form method="get" action="/cancel">
-                      <button>取消</button>
+                  <form method="post"  action="/reset/{{$name}}">
+                      <input type="submit" value="重置"/>
                   </form>
               </td>
           </tr>
       </table>
-
+{{  end }}
 </body>
 </html>

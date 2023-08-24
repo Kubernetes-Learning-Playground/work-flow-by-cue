@@ -29,4 +29,3 @@ func main() {
 	k8sflow := flow.New(&flow.Config{Root: cue.ParsePath(handlers.K8sTest1Root)}, cv, handlers.K8stest1Handler)
 	check(k8sflow.Run(context.TODO()))
 }
-
