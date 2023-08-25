@@ -1,4 +1,4 @@
-package utils
+package k8s_utils
 
 import (
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -12,22 +12,20 @@ import (
 	"log"
 )
 
-// 全局变量
 var (
 	K8sInformerFactory informers.SharedInformerFactory
 	K8sRestMapper      *meta.RESTMapper
 	K8sRestConfig      *rest.Config
 )
 
-// 由于这里没有脚手架， 所以  是 在init函数里干的
 func init() {
 	NewK8sConfig()
 }
 
 type K8sConfig struct{}
 
-
-// 直接初始化
+// NewK8sConfig 初始化
+// RestConfig 与 RestMapper
 func NewK8sConfig() *K8sConfig {
 	cfg := &K8sConfig{}
 	//K8sInformerFactory = cfg.initWatch()
@@ -38,28 +36,29 @@ func NewK8sConfig() *K8sConfig {
 	K8sRestConfig = cfg.K8sRestConfig()
 	return cfg
 }
-func (*K8sConfig) K8sRestConfig() *rest.Config {
+
+// K8sRestConfig 初始化RestConfig配置
+func (kc *K8sConfig) K8sRestConfig() *rest.Config {
 	config, err := clientcmd.BuildConfigFromFlags("", "./resources/config")
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	return config
 }
 
-// 初始化 动态客户端  ++  新增的函数
-func (this *K8sConfig) InitDynamicClient() dynamic.Interface {
-	client, err := dynamic.NewForConfig(this.K8sRestConfig())
+// InitDynamicClient 初始化动态客户端
+func (kc *K8sConfig) InitDynamicClient() dynamic.Interface {
+	client, err := dynamic.NewForConfig(kc.K8sRestConfig())
 	if err != nil {
 		log.Fatal(err)
 	}
 	return client
 }
 
-// 获取  所有api groupresource
-// 这个要 缓存起来。 不然反复从k8s api获取会比较慢
-func (this *K8sConfig) RestMapper() *meta.RESTMapper {
-	gr, err := restmapper.GetAPIGroupResources(this.InitClient().Discovery())
+// RestMapper 获取所有资源对象 group-resource
+// 初始化时先在内存保存，不需要重复从k8s中取
+func (kc *K8sConfig) RestMapper() *meta.RESTMapper {
+	gr, err := restmapper.GetAPIGroupResources(kc.InitClient().Discovery())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,17 +66,19 @@ func (this *K8sConfig) RestMapper() *meta.RESTMapper {
 	return &mapper
 }
 
-// 初始化client-go客户端
-func (cfg *K8sConfig) InitClient() *kubernetes.Clientset {
-	c, err := kubernetes.NewForConfig(cfg.K8sRestConfig())
+// InitClient 初始化clientSet
+func (kc *K8sConfig) InitClient() *kubernetes.Clientset {
+	c, err := kubernetes.NewForConfig(kc.K8sRestConfig())
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return c
 }
-func (cfg *K8sConfig) initWatch() informers.SharedInformerFactory {
-	fact := informers.NewSharedInformerFactory(cfg.InitClient(), 0)
+
+// initWatch
+func (kc *K8sConfig) initWatch() informers.SharedInformerFactory {
+	fact := informers.NewSharedInformerFactory(kc.InitClient(), 0)
 	fact.Core().V1().Namespaces().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{})
 	return fact
 }

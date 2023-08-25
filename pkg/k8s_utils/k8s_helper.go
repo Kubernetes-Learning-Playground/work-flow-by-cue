@@ -1,4 +1,4 @@
-package utils
+package k8s_utils
 
 import (
 	"bytes"
@@ -19,6 +19,12 @@ import (
 	"log"
 )
 
+/*
+	操作通用k8s资源对象 如同kubectl
+ */
+
+
+// setDefaultNamespaceIfScopedAndNoneSet 设置namespace
 func setDefaultNamespaceIfScopedAndNoneSet(u *unstructured.Unstructured, helper *resource.Helper) {
 	namespace := u.GetNamespace()
 	if helper.NamespaceScoped && namespace == "" {
@@ -26,9 +32,13 @@ func setDefaultNamespaceIfScopedAndNoneSet(u *unstructured.Unstructured, helper 
 		u.SetNamespace(namespace)
 	}
 }
+
+// newRestClient 初始化RestClient
+// 可为每个资源对象创建各自的客户端
 func newRestClient(restConfig *rest.Config, gv schema.GroupVersion) (rest.Interface, error) {
 	restConfig.ContentConfig = resource.UnstructuredPlusDefaultContentConfig()
 	restConfig.GroupVersion = &gv
+	// 判断group是否存在
 	if len(gv.Group) == 0 {
 		restConfig.APIPath = "/api"
 	} else {
@@ -38,10 +48,11 @@ func newRestClient(restConfig *rest.Config, gv schema.GroupVersion) (rest.Interf
 	return rest.RESTClientFor(restConfig)
 }
 
-// k8sdelete 功能。这个相对简单。
+// K8sDelete k8s delete
 func K8sDelete(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) error {
-	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(json),
-		len(json))
+	// 获取decoder对象
+	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(json), len(json))
+	// 不断遍例
 	for {
 		var rawObj runtime.RawExtension
 		err := decoder.Decode(&rawObj)
@@ -53,48 +64,43 @@ func K8sDelete(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) err
 			}
 		}
 		// 得到gvk
-		obj, gvk, err := syaml.NewDecodingSerializer(unstructured.
-			UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
+		obj, gvk, err := syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		//把obj 变成map[string]interface{}
+		// 把obj变成map[string]interface{} -> unstructuredObj对象
 		unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 		if err != nil {
 			return nil
 		}
 		unstructuredObj := &unstructured.Unstructured{Object: unstructuredMap}
-
+		// 由gvk获取restMapping
 		restMapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
 			return err
 		}
-		//这里不能使用 传统的clientset 必须要使用这个函数
+		// 获取客户端
 		restClient, err := newRestClient(restConfig, gvk.GroupVersion())
-
+		// 可以的操作实例
 		helper := resource.NewHelper(restClient, restMapping)
 
 		setDefaultNamespaceIfScopedAndNoneSet(unstructuredObj, helper)
-
+		// 删除操作
 		_, err = helper.Delete(unstructuredObj.GetNamespace(), unstructuredObj.GetName())
 		if err != nil {
-			log.Println(fmt.Sprintf("删除资源 %s/%s 失败:%s", unstructuredObj.GetNamespace(),
-				unstructuredObj.GetName(), err.Error(),
-			))
-			//就打印错误 仅此而已
+			log.Println(fmt.Sprintf("delete resource %s/%s fail:%s", unstructuredObj.GetNamespace(), unstructuredObj.GetName(), err.Error(), ))
 		}
 
 	}
 	return nil
 }
 
-// 模拟kubectl apply 功能
+// K8sApply kubectl apply
 func K8sApply(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*resource.Info, error) {
 	resList := []*resource.Info{}
 
-	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(json),
-		len(json))
+	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(json), len(json))
 	for {
 		var rawObj runtime.RawExtension
 		err := decoder.Decode(&rawObj)
@@ -105,13 +111,13 @@ func K8sApply(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*
 				return resList, err
 			}
 		}
-		// 得到gvk
+		// 获取gvk
 		obj, gvk, err := syaml.NewDecodingSerializer(unstructured.
 			UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
 		if err != nil {
 			return resList, err
 		}
-		//把obj 变成map[string]interface{}
+		// obj 转成 map[string]interface{}
 		unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 		if err != nil {
 			return resList, err
@@ -122,7 +128,7 @@ func K8sApply(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*
 		if err != nil {
 			return resList, err
 		}
-		//这里不能使用 传统的clientset 必须要使用这个函数
+		// 使用RestClient
 		restClient, err := newRestClient(restConfig, gvk.GroupVersion())
 
 		helper := resource.NewHelper(restClient, restMapping)
@@ -144,7 +150,7 @@ func K8sApply(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*
 			return resList, err
 		}
 
-		//获取更改的 数据
+		// 获取更改的数据
 		modified, err := util.GetModifiedConfiguration(objInfo.Object, true, unstructured.UnstructuredJSONScheme)
 		if err != nil {
 			return resList, err
@@ -155,7 +161,7 @@ func K8sApply(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*
 				return resList, err
 			}
 
-			//这里是kubectl的一些注解增加， 不管了。 直接加进去
+			// kubectl中的一些注解增加
 			if err := util.CreateApplyAnnotation(objInfo.Object, unstructured.UnstructuredJSONScheme); err != nil {
 				return resList, err
 			}
@@ -164,7 +170,6 @@ func K8sApply(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*
 			obj, err := helper.Create(objInfo.Namespace, true, objInfo.Object)
 			if err != nil {
 
-				fmt.Println("有错")
 				return resList, err
 			}
 			objInfo.Refresh(obj, true)
@@ -177,13 +182,13 @@ func K8sApply(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*
 
 		objInfo.Refresh(patchedObject, true)
 
-		// 把ObjectInfo 塞入列表
+		// ObjectInfo 放入列表
 		resList = append(resList, objInfo)
 	}
 	return resList, nil
 }
 
-// 模拟kubectl  describe
+// K8sDescribe kubectl describe
 func K8sDescribe(restConfig *rest.Config, gvk schema.GroupVersionKind, ns, name string) (string, error) {
 	resDescriber, ok := describe.DescriberFor(gvk.GroupKind(), restConfig)
 	if !ok {
@@ -198,7 +203,7 @@ func K8sDescribe(restConfig *rest.Config, gvk schema.GroupVersionKind, ns, name 
 }
 
 // 空的 metav1.table
-func undefineTable() *metav1.Table {
+func undefinedTable() *metav1.Table {
 	emptyColumn := []metav1.TableColumnDefinition{
 		{Name: "Name", Type: "string", Format: "name", Description: ""},
 		{Name: "Description", Type: "string", Format: "description", Description: ""},
@@ -219,10 +224,9 @@ func undefineTable() *metav1.Table {
 	return t
 }
 
-// 返回值改掉了   变成了 []*metav1.Table ,原来是：[]*unstructured.Unstructured
+// K8sGet kubectl get
 func K8sGet(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*metav1.Table, error) {
-	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(json),
-		len(json))
+	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(json), len(json))
 	ret := make([]*metav1.Table, 0)
 	for {
 		var rawObj runtime.RawExtension
@@ -252,7 +256,7 @@ func K8sGet(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*me
 		if err != nil {
 			return nil, err
 		}
-		//这里不能使用 传统的clientset 必须要使用这个函数
+
 		restClient, err := newRestClient(restConfig, gvk.GroupVersion())
 
 		helper := resource.NewHelper(restClient, restMapping)
@@ -267,12 +271,11 @@ func K8sGet(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*me
 		}
 
 		if err := objInfo.Get(); err != nil {
-			fmt.Println("k8sget获取资源出错:", err) //这里不做跳出循环处理，继续干
-			// 课件加了一行
-			ret = append(ret, undefineTable()) //加入一个空的 metav1.table
+			fmt.Println("k8sget获取资源出错:", err)
+			ret = append(ret, undefinedTable()) //加入一个空的 metav1.table
 			// 因为要考虑后面可能要读取多个，允许有个别是错误的
 		} else {
-			//注意这里。  统一变成了 metav1.Table
+			// 统一变成 metav1.Table
 			ret = append(ret, PrintObject(objInfo.Object.(*unstructured.Unstructured)))
 		}
 

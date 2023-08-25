@@ -1,10 +1,11 @@
-package handlers
+package main
 
 import (
 	"cuelang.org/go/cue"
 	"cuelang.org/go/tools/flow"
 	"fmt"
-	"github.com/practice/workflow-practice/pkg/utils"
+	"github.com/practice/workflow-practice/pkg/handlers"
+	"github.com/practice/workflow-practice/pkg/k8s_utils"
 	"os"
 	"os/exec"
 	"strings"
@@ -26,20 +27,20 @@ func K8stest1Handler(v cue.Value) (flow.Runner, error) {
 		// TODO: 这里可以区分，使用bash 脚本还是部署k8s服务
 		tt, _ := t.Value().LookupPath(cue.ParsePath("type")).String()
 		if tt == "k8s" {
-			action := getField(t.Value(), "action", "apply")
+			action := handlers.getField(t.Value(), "action", "apply")
 			k8sJson, err := t.Value().LookupPath(cue.ParsePath("component")).MarshalJSON()
 			if err != nil {
 				return err
 			}
 			fmt.Println(string(k8sJson))
 			if action == "apply" {
-				_, err = utils.K8sApply(k8sJson, utils.K8sRestConfig, *utils.K8sRestMapper)
+				_, err = k8s_utils.K8sApply(k8sJson, k8s_utils.K8sRestConfig, *k8s_utils.K8sRestMapper)
 				if err != nil {
 					return err
 				}
 
 			} else {
-				err = utils.K8sDelete(k8sJson, utils.K8sRestConfig, *utils.K8sRestMapper)
+				err = k8s_utils.K8sDelete(k8sJson, k8s_utils.K8sRestConfig, *k8s_utils.K8sRestMapper)
 				if err != nil {
 					return err
 				}

@@ -1,4 +1,4 @@
-package utils
+package k8s_utils
 
 import (
 	"bytes"
@@ -19,7 +19,6 @@ import (
 	"time"
 )
 
-// 可以打印 的 Map 集合
 var PrinterMap map[schema.GroupVersionKind]func(obj *unstructured.Unstructured) *metav1.Table
 
 func init() {
@@ -38,7 +37,6 @@ func PrintObject(obj *unstructured.Unstructured) *metav1.Table {
 	return defaultTable(obj)
 }
 
-// 课程来自 程序员在囧途(www.jtthink.com) 咨询群：985 14334
 // 对于没有注册实现的  显示默认的  只有名称、创建时间什么的
 func defaultTable(obj *unstructured.Unstructured) *metav1.Table {
 	defaultColumns := []metav1.TableColumnDefinition{
@@ -56,55 +54,13 @@ func defaultTable(obj *unstructured.Unstructured) *metav1.Table {
 	return t
 }
 
-func _hidden() {
-
-	//podColumnDefinitions := []metav1.TableColumnDefinition{
-	//	{Name: "Name", Type: "string", Format: "name", Description: metav1.ObjectMeta{}.SwaggerDoc()["name"]},
-	//	{Name: "Ready", Type: "string", Description: "The aggregate readiness state of this pod for accepting traffic."},
-	//	{Name: "Status", Type: "string", Description: "The aggregate status of the containers in this pod."},
-	//	{Name: "Restarts", Type: "string", Description: "The number of times the containers in this pod have been restarted and when the last container in this pod has restarted."},
-	//	{Name: "Age", Type: "string", Description: metav1.ObjectMeta{}.SwaggerDoc()["creationTimestamp"]},
-	//	{Name: "IP", Type: "string", Priority: 1, Description: apiv1.PodStatus{}.SwaggerDoc()["podIP"]},
-	//	{Name: "Node", Type: "string", Priority: 1, Description: apiv1.PodSpec{}.SwaggerDoc()["nodeName"]},
-	//	{Name: "Nominated Node", Type: "string", Priority: 1, Description: apiv1.PodStatus{}.SwaggerDoc()["nominatedNodeName"]},
-	//	{Name: "Readiness Gates", Type: "string", Priority: 1, Description: apiv1.PodSpec{}.SwaggerDoc()["readinessGates"]},
-	//}
-	//serviceColumnDefinitions := []metav1.TableColumnDefinition{
-	//	{Name: "Name", Type: "string", Format: "name", Description: metav1.ObjectMeta{}.SwaggerDoc()["name"]},
-	//	{Name: "Type", Type: "string", Description: apiv1.ServiceSpec{}.SwaggerDoc()["type"]},
-	//	{Name: "Cluster-IP", Type: "string", Description: apiv1.ServiceSpec{}.SwaggerDoc()["clusterIP"]},
-	//	{Name: "External-IP", Type: "string", Description: apiv1.ServiceSpec{}.SwaggerDoc()["externalIPs"]},
-	//	{Name: "Port(s)", Type: "string", Description: apiv1.ServiceSpec{}.SwaggerDoc()["ports"]},
-	//	{Name: "Age", Type: "string", Description: metav1.ObjectMeta{}.SwaggerDoc()["creationTimestamp"]},
-	//	{Name: "Selector", Type: "string", Priority: 1, Description: apiv1.ServiceSpec{}.SwaggerDoc()["selector"]},
-	//}
-	//ingressColumnDefinitions := []metav1.TableColumnDefinition{
-	//	{Name: "Name", Type: "string", Format: "name", Description: metav1.ObjectMeta{}.SwaggerDoc()["name"]},
-	//	{Name: "Class", Type: "string", Description: "The name of the IngressClass resource that should be used for additional configuration"},
-	//	{Name: "Hosts", Type: "string", Description: "Hosts that incoming requests are matched against before the ingress rule"},
-	//	{Name: "Address", Type: "string", Description: "Address is a list containing ingress points for the load-balancer"},
-	//	{Name: "Ports", Type: "string", Description: "Ports of TLS configurations that open"},
-	//	{Name: "Age", Type: "string", Description: metav1.ObjectMeta{}.SwaggerDoc()["creationTimestamp"]},
-	//}
-	//
-	//namespaceColumnDefinitions := []metav1.TableColumnDefinition{
-	//	{Name: "Name", Type: "string", Format: "name", Description: metav1.ObjectMeta{}.SwaggerDoc()["name"]},
-	//	{Name: "Status", Type: "string", Description: "The status of the namespace"},
-	//	{Name: "Age", Type: "string", Description: metav1.ObjectMeta{}.SwaggerDoc()["creationTimestamp"]},
-	//}
-	//serviceAccountColumnDefinitions := []metav1.TableColumnDefinition{
-	//	{Name: "Name", Type: "string", Format: "name", Description: metav1.ObjectMeta{}.SwaggerDoc()["name"]},
-	//	{Name: "Secrets", Type: "string", Description: apiv1.ServiceAccount{}.SwaggerDoc()["secrets"]},
-	//	{Name: "Age", Type: "string", Description: metav1.ObjectMeta{}.SwaggerDoc()["creationTimestamp"]},
-	//}
-
-}
 func translateTimestampSince(timestamp metav1.Time) string {
 	if timestamp.IsZero() {
 		return "<unknown>"
 	}
 	return duration.HumanDuration(time.Since(timestamp.Time))
 }
+
 func layoutContainerCells(containers []apiv1.Container) (names string, images string) {
 	var namesBuffer bytes.Buffer
 	var imagesBuffer bytes.Buffer
@@ -224,6 +180,7 @@ func makePortString(ports []apiv1.ServicePort) string {
 	}
 	return strings.Join(pieces, ",")
 }
+
 func loadBalancerStatusStringer(s apiv1.LoadBalancerStatus, wide bool) string {
 	ingress := s.Ingress
 	result := sets.NewString()
@@ -241,6 +198,7 @@ func loadBalancerStatusStringer(s apiv1.LoadBalancerStatus, wide bool) string {
 	}
 	return r
 }
+
 func getServiceExternalIP(svc *apiv1.Service, wide bool) string {
 	switch svc.Spec.Type {
 	case apiv1.ServiceTypeClusterIP:
@@ -272,6 +230,7 @@ func getServiceExternalIP(svc *apiv1.Service, wide bool) string {
 	}
 	return "<unknown>"
 }
+
 func printService(obj *apiv1.Service) ([]metav1.TableRow, error) {
 	row := metav1.TableRow{
 		Object: runtime.RawExtension{Object: obj},
@@ -292,6 +251,7 @@ func printService(obj *apiv1.Service) ([]metav1.TableRow, error) {
 
 	return []metav1.TableRow{row}, nil
 }
+
 func printPod(pod *apiv1.Pod) ([]metav1.TableRow, error) {
 	restarts := 0
 	totalContainers := len(pod.Spec.Containers)

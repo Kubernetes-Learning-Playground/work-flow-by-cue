@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/practice/workflow-practice/pkg/handlers"
 )
@@ -45,16 +46,17 @@ func main() {
 			flow.Params = params
 
 			if err := flow.Run(context.TODO()); err != nil {
+				fmt.Println("err: ", err)
 				flow.Status = err.Error() //设置当前状态
 				flow.Failed++
 			} else {
 				flow.Status = "success"
-				flow.Successed++
+				flow.Successful++
 			}
 			c.Redirect(302, "/")
 
 		} else {
-			panic("找不到该流程")
+			panic("workflow not found")
 		}
 
 	})

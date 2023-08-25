@@ -6,6 +6,11 @@ pod2: {
 		metadata: name: "pod2"
 		spec: {
 			restartPolicy: "Never"
+			initContainers: [{
+					name:  "init-myservice"
+					image: "busybox:1.28"
+					command: ["sh", "-c", "sleep 50"]
+		  }]
 			containers: [{
 				name:  "step1"
 				image: "busybox:1.28"

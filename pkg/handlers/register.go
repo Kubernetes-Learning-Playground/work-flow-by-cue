@@ -6,80 +6,80 @@ import (
 	"cuelang.org/go/cue/cuecontext"
 	"cuelang.org/go/cue/load"
 	"cuelang.org/go/tools/flow"
-	"fmt"
 	"strings"
 	"sync"
 )
 
-// 这里放一个全局变量 用来收集 WorkFlow
+// WorkFlow 工作流对象
 type WorkFlow struct {
-	Name    string
-	Desc    string
+	// 工作流名
+	Name string
+	Desc string
+	// NewFlow 初始化工作流func
 	NewFlow func(string) *flow.Controller
-	flow    *flow.Controller
-	//上节 是 Flow  *flow.Controller
-	Status    string
-	Successed int
-	Failed    int
-	Params    string //提交的参数   可以有也可以没有
-	lock      sync.Mutex
-	Order     int //用于排序
+	// flow对象
+	flow *flow.Controller
+	// Status 本字工作流状态
+	Status string
+	// Successful 成功次数
+	Successful int
+	// Failed 失败次数
+	Failed int
+	// Params 传入参数
+	Params string
+
+	lock sync.Mutex
 }
 
-// 重置
+// Reset 重置工作流对象
 func (wf *WorkFlow) Reset() {
 	wf.lock.Lock()
 	defer wf.lock.Unlock()
 
-	wf.Successed = 0
+	// 清理字段
+	wf.Successful = 0
 	wf.Failed = 0
 	wf.Status = ""
 	wf.flow = nil
 	wf.Status = ""
-	wf.Params = "" // 参数要清掉
+	wf.Params = ""
 }
 
-// 专门封了一个函数
+// Run 先获取该工作流，并执行Run方法
 func (wf *WorkFlow) Run(ctx context.Context) error {
 	if wf.lock.TryLock() {
 		defer wf.lock.Unlock()
 	}
-	wf.flow = nil // 很关键
+	// 需要把原来的flow至为空
+	wf.flow = nil
 	return wf.GetFlow().Run(ctx)
 }
 
-// 获取当前工作流
+// GetFlow 获取当前工作流
 func (wf *WorkFlow) GetFlow() *flow.Controller {
 	if wf.lock.TryLock() {
 		defer wf.lock.Unlock()
 	}
 
-	if wf.flow == nil { // 如果flow=nil 重新初始化
+	// 如果flow=nil 重新初始化
+	if wf.flow == nil {
 		wf.flow = wf.NewFlow(wf.Params)
 	}
 	return wf.flow
 }
 
+// WorkFlows 可存放多个工作流对象，
+// 接口执行时，使用flow的name查找对应的工作流
 var WorkFlows = make(map[string]*WorkFlow)
 
-// 排序工作流  ---还没租
-func SortFlows() []*WorkFlow {
-	//flows := []*WorkFlow{}
-	//for _, v := range WorkFlows {
-	//
-	//}
-	return nil
-}
 
-// 注册
-func Register(name, desc string, newFlow func(params string) *flow.Controller, order int) {
-	WorkFlows[name] = &WorkFlow{
-		Name: name, Desc: desc, NewFlow: newFlow, Order: order,
-	}
+// Register 注册工作流
+func Register(name, desc string, newFlow func(params string) *flow.Controller) {
+	WorkFlows[name] = &WorkFlow{Name: name, Desc: desc, NewFlow: newFlow}
 }
 
 // NewFlowFunc 创建工作流方法
-// tplPath模板路径 root工作流根节点
+// tplPath cue模板路径 root工作流根节点
 func NewFlowFunc(tplPath, root string, taskFunc flow.TaskFunc) func(params string) *flow.Controller {
 	return func(params string) *flow.Controller {
 		inst := load.Instances([]string{tplPath}, nil)[0]
@@ -116,6 +116,7 @@ func NewFlowFunc(tplPath, root string, taskFunc flow.TaskFunc) func(params strin
 			}
 		}
 
+		// 执行工作流的流程模版
 		return flow.New(&flow.Config{Root: cue.ParsePath(root)}, filledCv, taskFunc)
 	}
 }
