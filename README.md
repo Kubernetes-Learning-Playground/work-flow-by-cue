@@ -7,7 +7,7 @@
 1. 可提供 k8s部署与bash脚本执行功能
 2. 目前k8s仅支持pods资源，并支持apply delete操作
 3. 支持多step"串行"或"并行"执行功能(cue模版中step字段中设置status: stepx.status，就会等待前一个step执行后再执行)
-
+![](https://github.com/Kubernetes-Learning-Playground/work-flow-by-cue/blob/main/image/%E6%97%A0%E6%A0%87%E9%A2%98-2023-08-10-2343.png?raw=true)
 
 
 ```cue
