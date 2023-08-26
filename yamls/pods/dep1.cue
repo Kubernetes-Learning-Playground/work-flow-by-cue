@@ -1,8 +1,6 @@
-package yamls
+package pods
 
-task_deploy: {
- type: "k8s",
- component: {
+dep: {
   apiVersion: "apps/v1"
   kind:       "Deployment"
   metadata: name: "flowdeploy"
@@ -21,6 +19,4 @@ task_deploy: {
     }]
    }
   }
- }
-
 }

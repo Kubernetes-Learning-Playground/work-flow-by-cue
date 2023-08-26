@@ -7,6 +7,7 @@ import (
 	"cuelang.org/go/tools/flow"
 	"fmt"
 	"io"
+	appv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
@@ -27,7 +28,7 @@ const (
 
 func init() {
 	f := NewFlowFunc(PodFlowTpl, PodFlowRoot, workflowHandler)
-	Register("workflow", "多个POD工作流操作", f)
+	Register("workflow", "工作流操作", f)
 }
 
 func getPodLogs(obj *resource.Info) string {
@@ -54,7 +55,9 @@ func getPodLogs(obj *resource.Info) string {
 }
 
 // waitForStatusByInformer 使用informer监听等待pod状态
-func waitForStatusByInformer(obj *resource.Info) error {
+// TODO: 可考虑加入超时机制，传入ctx，做超时
+// FIXME: 当已经有此资源时，会阻塞在此
+func waitForStatusByInformer(obj *resource.Info, objType string) error {
 	var err error
 	defer func() {
 		if e := recover(); e != nil {
@@ -62,23 +65,45 @@ func waitForStatusByInformer(obj *resource.Info) error {
 		}
 	}()
 
+	// 如果是service资源对象，直接返回
+	if objType == "service" {
+		return nil
+	}
+
 	lw := cache.NewListWatchFromClient(obj.Client, obj.ResourceMapping().Resource.Resource, obj.Namespace, fields.Everything())
 	informer := cache.NewSharedIndexInformer(lw, obj.Object, 0, nil)
 	ch := make(chan struct{})
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			pod := &v1.Pod{}
-			err := runtime.DefaultUnstructuredConverter.FromUnstructured(newObj.(*unstructured.Unstructured).UnstructuredContent(), &pod)
+			var ot runtime.Object
+			if objType == "pod" {
+				ot = &v1.Pod{}
+			} else if objType == "deployment" {
+				ot = &appv1.Deployment{}
+			}
+
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(newObj.(*unstructured.Unstructured).UnstructuredContent(), ot)
 			if err != nil {
-				klog.Errorf("pod name [%s] namespace [%s], informer error", pod.Name, pod.Namespace)
+				klog.Errorf("object informer error")
 				close(ch)
 				return
 			}
 
-			// 当此pod是running时，关闭informer
-			if pod.Status.Phase == v1.PodRunning {
-				klog.Infof("pod name [%s] namespace [%s], success", pod.Name, pod.Namespace)
-				close(ch)
+			switch objType {
+			case "pod":
+				pod := ot.(*v1.Pod)
+				// 当此pod是running时，关闭informer
+				if pod.Status.Phase == v1.PodRunning {
+					klog.Infof("pod name [%s] namespace [%s], success", pod.Name, pod.Namespace)
+					klog.Infof("pod container log: %v", getPodLogs(obj))
+					close(ch)
+				}
+			case "deployment":
+				dep := ot.(*appv1.Deployment)
+				if dep.Status.Replicas == dep.Status.ReadyReplicas {
+					klog.Infof("deployment name [%s] namespace [%s], success", dep.Name, dep.Namespace)
+					close(ch)
+				}
 			}
 
 		},
@@ -96,6 +121,12 @@ func workflowHandler(v cue.Value) (flow.Runner, error) {
 	}
 	return flow.RunnerFunc(func(t *flow.Task) error {
 
+		klog.Infof("current workflow index: %v", t.Index())
+
+		for _, d := range t.Dependencies() {
+			klog.Infof("current dependency index: %v", d.Path())
+		}
+		fmt.Println("-----------------------------------------------------")
 		if t.Index() != 0 {
 
 			action := getField(t.Value(), "action", "apply")
@@ -104,6 +135,8 @@ func workflowHandler(v cue.Value) (flow.Runner, error) {
 
 			// 执行k8s流程
 			if taskType == "k8s" {
+				objType := getField(t.Value(), "objType", "pod")
+				fmt.Println(objType)
 				podJson, err := jsonField(t.Value(), "template")
 				if err != nil {
 					return err
@@ -114,10 +147,11 @@ func workflowHandler(v cue.Value) (flow.Runner, error) {
 					if err != nil {
 						return err
 					}
+
 					// TODO: 如果需要支持其他资源对象，需要修改informer
 					// 如果返回的pod对象有多个，则调用waitForStatusByInformer
 					if len(res) > 0 {
-						err = waitForStatusByInformer(res[0])
+						err = waitForStatusByInformer(res[0], objType)
 						return err
 					}
 				} else {

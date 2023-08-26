@@ -9,7 +9,7 @@ pod2: {
 			initContainers: [{
 					name:  "init-myservice"
 					image: "busybox:1.28"
-					command: ["sh", "-c", "sleep 50"]
+					command: ["sh", "-c", "sleep 10"]
 		  }]
 			containers: [{
 				name:  "step1"

@@ -11,7 +11,7 @@ workflow: {
       }
 			step1: {
 				type: "k8s"              // 工作流种类，目前支持k8s服务与bash脚本
-				objType: "pod"           // 如果是k8s对象，需要指定资源对象，目前仅支持pod
+				objType: "pod"           // 如果是k8s对象，需要指定资源对象，目前仅支持pod deployment service
 				template: pods.pod1		   // 模版存放位置
 				action: step0.action     // step1会依赖step0
 				status: string
@@ -35,5 +35,18 @@ workflow: {
 				status: step3.status	 // step2会依赖step1的pod状态
 				action: step0.action   // step2会依赖step0
 		 }
-
+		 step5: {
+				type: "k8s"
+				objType: "deployment"
+				template: pods.dep
+				status: step4.status	 // step2会依赖step1的pod状态
+				action: step0.action   // step2会依赖step0
+		 }
+		 step6: {
+				type: "k8s"
+				objType: "service"
+				template: pods.svc
+				status: step4.status	 // step2会依赖step1的pod状态
+				action: step0.action   // step2会依赖step0
+		 }
 }

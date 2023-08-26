@@ -9,7 +9,7 @@ pod3: {
 			containers: [{
 				name:  "step1"
 				image: "busybox:1.28"
-				command: ["sh", "-c", "echo \"pod2-step1\" && sleep 3600"]
+				command: ["sh", "-c", "echo \"pod3-step3\" && sleep 3600"]
 			}]
 		}
 }
