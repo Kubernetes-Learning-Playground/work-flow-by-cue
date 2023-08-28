@@ -9,7 +9,7 @@
 3. 支持多step"串行"或"并行"执行功能(cue模版中step字段中设置status: stepx.status，就会等待前一个step执行后再执行)
 ![](https://github.com/Kubernetes-Learning-Playground/work-flow-by-cue/blob/main/image/%E6%97%A0%E6%A0%87%E9%A2%98-2023-08-10-2343.png?raw=true)
 
-
+- 目前支持cue文件配置工作流，后续会对其进行适配或扩展，让工作流支持yaml文件
 ```cue
 // 整个工作流模版
 workflow: {
@@ -35,27 +35,27 @@ workflow: {
         script: pods.script
         status: step2.status	   // step3会依赖step2的pod状态
       }
-     step4: {
+      step4: {
         type: "k8s"
         objType: "pod"
         template: pods.pod3
         status: step3.status	   // step4会依赖step3的pod状态
         action: step0.action       // step4会依赖step0
-     }
-     step5: {
+      }
+      step5: {
         type: "k8s"
         objType: "deployment"
         template: pods.dep
         status: step4.status	 // step5会依赖step4的pod状态
         action: step0.action     // step5会依赖step0
-     }
-	 step6: {
+      }
+	  step6: {
         type: "k8s"
         objType: "service"
         template: pods.svc
         status: step4.status	 // step6会依赖step4的pod状态
         action: step0.action     // step6会依赖step0
-     }
+      }
 
 }
 ```

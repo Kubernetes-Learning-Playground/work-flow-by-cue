@@ -175,14 +175,14 @@ func workflowHandler(v cue.Value) (flow.Runner, error) {
 				// 执行脚本
 				err := cmd.Start()
 				if err != nil {
-					fmt.Println("启动脚本时出错:", err)
+					klog.Errorf("launching script error: %v", err)
 					return err
 				}
 
 				// 等待脚本执行完成
 				err = cmd.Wait()
 				if err != nil {
-					fmt.Println("执行脚本时出错:", err)
+					klog.Errorf("executing script error: %v", err)
 					return err
 				}
 			}
