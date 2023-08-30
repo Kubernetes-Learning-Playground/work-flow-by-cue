@@ -34,19 +34,26 @@ workflow: {
 				template: pods.pod3
 				status: step3.status	 // step2会依赖step1的pod状态
 				action: step0.action   // step2会依赖step0
-		 }
-		 step5: {
+		  }
+		  step5: {
+				type: "k8s"
+				objType: "configmap"
+				template: pods.cm
+				status: step4.status	 // step2会依赖step1的pod状态
+				action: step0.action   // step2会依赖step0
+     	}
+		  step6: {
 				type: "k8s"
 				objType: "deployment"
 				template: pods.dep
 				status: step4.status	 // step2会依赖step1的pod状态
 				action: step0.action   // step2会依赖step0
-		 }
-		 step6: {
+		  }
+		  step7: {
 				type: "k8s"
 				objType: "service"
 				template: pods.svc
 				status: step4.status	 // step2会依赖step1的pod状态
 				action: step0.action   // step2会依赖step0
-		 }
+		  }
 }

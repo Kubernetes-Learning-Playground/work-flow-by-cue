@@ -22,6 +22,7 @@ import (
 )
 
 const (
+	// FIXME: 需要改到更通用的位置
 	PodFlowTpl  = "pkg/flowtpls/workflow.cue"
 	PodFlowRoot = "workflow"
 )
@@ -65,8 +66,8 @@ func waitForStatusByInformer(obj *resource.Info, objType string) error {
 		}
 	}()
 
-	// 如果是service资源对象，直接返回
-	if objType == "service" {
+	// 如果是service configmap secret资源对象，直接返回
+	if objType == "service" || objType == "configmap" || objType == "secret" {
 		return nil
 	}
 
@@ -89,6 +90,7 @@ func waitForStatusByInformer(obj *resource.Info, objType string) error {
 				return
 			}
 
+			// pod 直到状态为running时关闭，deployment 则是当期望副本与实际副本相等时关闭
 			switch objType {
 			case "pod":
 				pod := ot.(*v1.Pod)
