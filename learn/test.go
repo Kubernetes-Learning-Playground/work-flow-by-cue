@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	K8SFlowTpl = "pkg/flowtpls/k8sflow.cue"
+	K8SFlowTpl = "pkg/work_flow_template/k8sflow.cue"
 )
 
 func check(err error) {

@@ -23,7 +23,7 @@ import (
 
 const (
 	// FIXME: 需要改到更通用的位置
-	PodFlowTpl  = "pkg/flowtpls/workflow.cue"
+	PodFlowTpl  = "./work_flow_template/workflow.cue"
 	PodFlowRoot = "workflow"
 )
 

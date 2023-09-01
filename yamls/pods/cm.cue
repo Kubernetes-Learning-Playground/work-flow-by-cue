@@ -8,15 +8,5 @@ cm: {
     	aaa: "aaa"
     	bbb: "bbb"
 
-    	test_properties: """
-											 aaa=aaa
-											 bbb=5
-											"""
-
-    	test_properties1: """
-											  aaa=aaa
-											  bbb=5
-												"""
-
     }
 }
