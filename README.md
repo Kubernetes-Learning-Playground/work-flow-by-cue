@@ -94,5 +94,11 @@ pod3: {
 }
 ```
 
+### 接口调用实现：
+- 注册工作流接口
+![](https://github.com/Kubernetes-Learning-Playground/work-flow-by-cue/blob/main/image/img.png?raw=true)
+- 执行工作流接口
+![](https://github.com/Kubernetes-Learning-Playground/work-flow-by-cue/blob/main/image/img_1.png?raw=true)
+
 
 

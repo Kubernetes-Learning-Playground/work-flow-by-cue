@@ -3,19 +3,16 @@ package k8s_utils
 import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 	"log"
 )
 
 var (
-	K8sInformerFactory informers.SharedInformerFactory
-	K8sRestMapper      *meta.RESTMapper
-	K8sRestConfig      *rest.Config
+	K8sRestMapper *meta.RESTMapper
+	K8sRestConfig *rest.Config
 )
 
 func init() {
@@ -28,10 +25,6 @@ type K8sConfig struct{}
 // RestConfig 与 RestMapper
 func NewK8sConfig() *K8sConfig {
 	cfg := &K8sConfig{}
-	//K8sInformerFactory = cfg.initWatch()
-	//stopCh := make(chan struct{})
-	//K8sInformerFactory.Start(stopCh)
-	//K8sInformerFactory.WaitForCacheSync(stopCh)
 	K8sRestMapper = cfg.RestMapper()
 	K8sRestConfig = cfg.K8sRestConfig()
 	return cfg
@@ -72,13 +65,5 @@ func (kc *K8sConfig) InitClient() *kubernetes.Clientset {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	return c
-}
-
-// initWatch
-func (kc *K8sConfig) initWatch() informers.SharedInformerFactory {
-	fact := informers.NewSharedInformerFactory(kc.InitClient(), 0)
-	fact.Core().V1().Namespaces().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{})
-	return fact
 }

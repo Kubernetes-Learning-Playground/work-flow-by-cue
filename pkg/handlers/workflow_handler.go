@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 const (
@@ -27,10 +28,11 @@ const (
 	PodFlowRoot = "workflow"
 )
 
-func init() {
-	f := NewFlowFunc(PodFlowTpl, PodFlowRoot, workflowHandler)
-	Register("workflow", "工作流操作", f)
-}
+//func init() {
+//	// TODO: 注册转为 接口注册
+//	f := NewFlowFunc(PodFlowTpl, PodFlowRoot)
+//	Register("workflow", "工作流操作", f)
+//}
 
 func getPodLogs(obj *resource.Info) string {
 	podLogOpts := &v1.PodLogOptions{}
@@ -58,7 +60,7 @@ func getPodLogs(obj *resource.Info) string {
 // waitForStatusByInformer 使用informer监听等待pod状态
 // TODO: 可考虑加入超时机制，传入ctx，做超时
 // FIXME: 当已经有此资源时，会阻塞在此
-func waitForStatusByInformer(obj *resource.Info, objType string) error {
+func waitForStatusByInformer(ctx context.Context, obj *resource.Info, objType string) error {
 	var err error
 	defer func() {
 		if e := recover(); e != nil {
@@ -110,11 +112,21 @@ func waitForStatusByInformer(obj *resource.Info, objType string) error {
 
 		},
 	})
-	// 阻塞运行，直到informer停止
-	informer.Run(ch)
-	return err
+	// 使用 context.WithTimeout 创建带有超时的上下文
+	ctx, cancel := context.WithTimeout(ctx, time.Minute*20)
+	defer cancel()
+
+	// 阻塞运行，直到informer停止或超时
+	go informer.Run(ch)
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("waitForStatusByInformer timed out: %v", ctx.Err())
+	case <-ch:
+		return err
+	}
 }
 
+// workflowHandler 执行工作流
 func workflowHandler(v cue.Value) (flow.Runner, error) {
 	l, b := v.Label()
 	// 如果是根节点，跳过
@@ -132,7 +144,6 @@ func workflowHandler(v cue.Value) (flow.Runner, error) {
 		if t.Index() != 0 {
 
 			action := getField(t.Value(), "action", "apply")
-
 			taskType := getField(t.Value(), "type", "k8s")
 
 			// 执行k8s流程
@@ -153,7 +164,7 @@ func workflowHandler(v cue.Value) (flow.Runner, error) {
 					// TODO: 如果需要支持其他资源对象，需要修改informer
 					// 如果返回的pod对象有多个，则调用waitForStatusByInformer
 					if len(res) > 0 {
-						err = waitForStatusByInformer(res[0], objType)
+						err = waitForStatusByInformer(context.Background(), res[0], objType)
 						return err
 					}
 				} else {

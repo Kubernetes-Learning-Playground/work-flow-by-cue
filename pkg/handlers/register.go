@@ -14,6 +14,7 @@ import (
 type WorkFlow struct {
 	// 工作流名
 	Name string
+	// 描述
 	Desc string
 	// NewFlow 初始化工作流func
 	NewFlow func(string) *flow.Controller
@@ -60,7 +61,6 @@ func (wf *WorkFlow) GetFlow() *flow.Controller {
 	if wf.lock.TryLock() {
 		defer wf.lock.Unlock()
 	}
-
 	// 如果flow=nil 重新初始化
 	if wf.flow == nil {
 		wf.flow = wf.NewFlow(wf.Params)
@@ -72,7 +72,6 @@ func (wf *WorkFlow) GetFlow() *flow.Controller {
 // 接口执行时，使用flow的name查找对应的工作流
 var WorkFlows = make(map[string]*WorkFlow)
 
-
 // Register 注册工作流
 func Register(name, desc string, newFlow func(params string) *flow.Controller) {
 	WorkFlows[name] = &WorkFlow{Name: name, Desc: desc, NewFlow: newFlow}
@@ -80,7 +79,8 @@ func Register(name, desc string, newFlow func(params string) *flow.Controller) {
 
 // NewFlowFunc 创建工作流方法
 // tplPath cue模板路径 root工作流根节点
-func NewFlowFunc(tplPath, root string, taskFunc flow.TaskFunc) func(params string) *flow.Controller {
+// FIXME: 不要全都是 panic
+func NewFlowFunc(tplPath, root string) func(params string) *flow.Controller {
 	return func(params string) *flow.Controller {
 		inst := load.Instances([]string{tplPath}, nil)[0]
 		cc := cuecontext.New()
@@ -117,6 +117,6 @@ func NewFlowFunc(tplPath, root string, taskFunc flow.TaskFunc) func(params strin
 		}
 
 		// 执行工作流的流程模版
-		return flow.New(&flow.Config{Root: cue.ParsePath(root)}, filledCv, taskFunc)
+		return flow.New(&flow.Config{Root: cue.ParsePath(root)}, filledCv, workflowHandler)
 	}
 }

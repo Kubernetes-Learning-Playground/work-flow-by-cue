@@ -1,13 +1,13 @@
 package flowtpls
 
 import (
-	  "github.com/workflow/yamls/pods"
+	  "github.com/workflow/yamls/pods" // 需要引用的 cue 路径包
 )
 
 // 整个工作流模版
 workflow: {
       step0:{
-      	action: string           // 支持k8s apply delete操作，莫认为apply
+      	action: string           // 支持k8s apply delete操作，默认为apply
       }
 			step1: {
 				type: "k8s"              // 工作流种类，目前支持k8s服务与bash脚本
