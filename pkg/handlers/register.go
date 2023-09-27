@@ -20,7 +20,7 @@ type WorkFlow struct {
 	NewFlow func(string) *flow.Controller
 	// flow对象
 	flow *flow.Controller
-	// Status 本字工作流状态
+	// Status 工作流状态
 	Status string
 	// Successful 成功次数
 	Successful int
@@ -101,7 +101,8 @@ func NewFlowFunc(tplPath, root string) func(params string) *flow.Controller {
 
 			if fields, err := pv.Fields(); err == nil {
 				for fields.Next() {
-					fillPath := cue.ParsePath(root + "." + fields.Label()) // workflow.params
+					// workflow.params
+					fillPath := cue.ParsePath(root + "." + fields.Label())
 
 					if !cv.LookupPath(fillPath).Exists() {
 						continue
@@ -111,7 +112,6 @@ func NewFlowFunc(tplPath, root string) func(params string) *flow.Controller {
 					if filledCv.Err() != nil {
 						panic(filledCv.Err())
 					}
-
 				}
 			}
 		}

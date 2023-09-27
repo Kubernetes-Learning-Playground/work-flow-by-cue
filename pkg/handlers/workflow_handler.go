@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	// FIXME: 需要改到更通用的位置
+	// FIXME: 需要改到更通用的位置，目前已经改为接口注册
 	PodFlowTpl  = "./work_flow_template/workflow.cue"
 	PodFlowRoot = "workflow"
 )
@@ -113,20 +113,23 @@ func waitForStatusByInformer(ctx context.Context, obj *resource.Info, objType st
 		},
 	})
 	// 使用 context.WithTimeout 创建带有超时的上下文
-	ctx, cancel := context.WithTimeout(ctx, time.Minute*20)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
 	defer cancel()
 
 	// 阻塞运行，直到informer停止或超时
 	go informer.Run(ch)
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("waitForStatusByInformer timed out: %v", ctx.Err())
+		return fmt.Errorf("waitForStatusByInformer err: %v, "+
+			"maybe this resource [%v] [%v/%v] has not been modified or deployment failed\n",
+			ctx.Err(), obj.Object.GetObjectKind().GroupVersionKind().Kind, obj.Name, obj.Namespace)
 	case <-ch:
 		return err
 	}
 }
 
 // workflowHandler 执行工作流
+// FIXME: 拆分方法，把不同功能分出去
 func workflowHandler(v cue.Value) (flow.Runner, error) {
 	l, b := v.Label()
 	// 如果是根节点，跳过
@@ -134,22 +137,18 @@ func workflowHandler(v cue.Value) (flow.Runner, error) {
 		return nil, nil
 	}
 	return flow.RunnerFunc(func(t *flow.Task) error {
-
+		fmt.Printf("----------------------%s-------------------------------\n", t.Path())
 		klog.Infof("current workflow index: %v", t.Index())
-
 		for _, d := range t.Dependencies() {
 			klog.Infof("current dependency index: %v", d.Path())
 		}
-		fmt.Println("-----------------------------------------------------")
 		if t.Index() != 0 {
-
 			action := getField(t.Value(), "action", "apply")
 			taskType := getField(t.Value(), "type", "k8s")
 
 			// 执行k8s流程
 			if taskType == "k8s" {
 				objType := getField(t.Value(), "objType", "pod")
-				fmt.Println(objType)
 				podJson, err := jsonField(t.Value(), "template")
 				if err != nil {
 					return err
@@ -165,7 +164,9 @@ func workflowHandler(v cue.Value) (flow.Runner, error) {
 					// 如果返回的pod对象有多个，则调用waitForStatusByInformer
 					if len(res) > 0 {
 						err = waitForStatusByInformer(context.Background(), res[0], objType)
-						return err
+						if err != nil {
+							klog.Error("waitForStatusByInformer error: ", err)
+						}
 					}
 				} else {
 					err = delete(podJson)

@@ -95,7 +95,7 @@ func K8sDelete(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) err
 
 // K8sApply kubectl apply
 func K8sApply(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*resource.Info, error) {
-	resList := []*resource.Info{}
+	resList := make([]*resource.Info, 0)
 
 	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(json), len(json))
 	for {
@@ -166,7 +166,6 @@ func K8sApply(json []byte, restConfig *rest.Config, mapper meta.RESTMapper) ([]*
 			// 直接创建
 			obj, err := helper.Create(objInfo.Namespace, true, objInfo.Object)
 			if err != nil {
-
 				return resList, err
 			}
 			objInfo.Refresh(obj, true)

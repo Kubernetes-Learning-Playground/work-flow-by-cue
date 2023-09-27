@@ -1,15 +1,17 @@
-## workflow工作流
+## workflow 工作流
 
 ### 项目思路与功能
-项目背景：一般在集群内都会有类似工作流(需要顺序执行的业务场景，ex: 部署时b依赖a，c依赖b)
+项目背景：一般在集群内都会有部署需求，因此需要类似工作流的服务。(需要顺序执行的业务场景，ex: 部署时 b 依赖 a，c 依赖 b )
 
 支持功能：
-1. 可提供 k8s部署与bash脚本执行功能
-2. 目前k8s支持 **pods** **deployment** **service** **configmaps** 资源，并支持apply delete操作
-3. 支持多step"串行"或"并行"执行功能(cue模版中step字段中设置status: stepx.status，就会等待前一个step执行后再执行)
+1. 可提供 部署 k8s 服务与运行 bash 脚本执行功能
+2. 目前k8s支持 **pods** **deployment** **service** **configmaps** 资源，并支持 apply delete 操作
+3. 支持多 step "串行"执行功能( cue 模版中 step 字段中设置 status: stepx.status，就会等待前一个 step 执行后再执行)
 ![](https://github.com/Kubernetes-Learning-Playground/work-flow-by-cue/blob/main/image/%E6%97%A0%E6%A0%87%E9%A2%98-2023-08-10-2343.png?raw=true)
 
-- 目前支持cue文件配置工作流，后续会对其进行适配或扩展，让工作流支持yaml文件
+- 目前支持 cue 文件配置工作流，后续会对其进行适配或扩展，让工作流支持 yaml 文件
+
+更多配置文件示例可[参考](./work_flow_template)
 ```cue
 // 整个工作流模版
 workflow: {
@@ -59,8 +61,8 @@ workflow: {
 
 }
 ```
-
-- bash脚本cue模版
+更多配置文件示例可[参考](./yamls)
+- bash 脚本 cue 模版
 ```cue
 package pods
 
@@ -75,7 +77,7 @@ done
 """
 ```
 
-- pod cue模版
+- pod cue 模版
 ```cue
 package pods
 

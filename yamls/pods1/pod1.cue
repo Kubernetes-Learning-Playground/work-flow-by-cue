@@ -2,7 +2,10 @@ package pods1
 pod1: {
 	  apiVersion: "v1"
 		kind:       "Pod"
-		metadata: name: "pod-workflow1"
+		metadata: {
+    	name: "pod-workflow1"
+    	namespace: "default"
+    }
 		spec: {
 			restartPolicy: "Never"
 			initContainers: [{

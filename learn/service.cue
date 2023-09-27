@@ -6,7 +6,10 @@ task_svc: {
  component: {
   apiVersion: "v1"
   kind:       "Service"
-  metadata: name: "flowsvc"
+  metadata: {
+  	name: "flowsvc"
+  	namespace: "default"
+  }
   spec: {
    type: "ClusterIP"
    ports: [{

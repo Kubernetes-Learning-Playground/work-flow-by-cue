@@ -17,8 +17,9 @@ func HttpServer(c *common.ServerConfig) {
 
 	r := gin.New()
 
-	// 使用中间件的方式引入链路追踪
 	r.Use(gin.Recovery())
+
+	// TODO: 接口返回时，暴露更多信息
 
 	// 重置工作流接口
 	r.POST("/reset/:name", func(c *gin.Context) {
@@ -35,13 +36,11 @@ func HttpServer(c *common.ServerConfig) {
 	// 启动工作流接口
 	// ex: http://localhost:8085/start/workflow
 	r.POST("/start/:name", func(c *gin.Context) {
-
-		name := c.Param("name")        //获取工作流名称
-		params := c.PostForm("params") // 获取 提交参数
+		name := c.Param("name")        // 获取工作流名称
+		params := c.PostForm("params") // 获取提交参数
 		if flow, ok := handlers.WorkFlows[name]; ok {
 			flow.Params = params
 			if err := flow.Run(context.Background()); err != nil {
-				fmt.Println("dddd: ", err)
 				c.JSON(400, gin.H{"error": err.Error()})
 				return
 			}
@@ -50,7 +49,6 @@ func HttpServer(c *common.ServerConfig) {
 			c.JSON(400, gin.H{"error": "not found workflow " + name})
 			return
 		}
-
 	})
 
 	// 注册模版接口
